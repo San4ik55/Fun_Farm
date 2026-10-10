@@ -31,3 +31,24 @@ void dropItem(int inventory[], int slot);
 void work(int *day, int *hour, int hoursWorked);
 int safeInputInt(const char *prompt);
 void removeDuplicates(int inventory[]);
+
+int main() {
+    int current_day = START_DAY;
+    int current_hour = START_HOUR;
+    int inventory[INV_SIZE] = {0};
+
+    inventory[0] = ITEM_EMPTY;
+    inventory[1] = ITEM_WOOD;
+    inventory[2] = ITEM_STONE;
+    inventory[3] = ITEM_SEED;
+    inventory[4] = ITEM_AXE;
+    inventory[5] = ITEM_PICKAXE;
+    inventory[6] = ITEM_COPPER;
+    inventory[7] = ITEM_IRON;
+    inventory[8] = ITEM_GOLD;
+    inventory[9] = ITEM_COAL;
+    printTime(current_day, current_hour);
+    printInv(inventory);
+    return 0;
+    
+}
