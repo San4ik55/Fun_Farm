@@ -52,3 +52,14 @@ int main() {
     return 0;
     
 }
+
+void printTime(int day, int hour) {
+    printf("Текущее время: День %d, %d Часов\n", day, hour);
+}
+void printInv(const int inventory[]) {
+    printf("---Инвентарь---\n");
+    for (int i = 0; i < INV_SIZE; i++) {
+        int id = inventory[i];
+        printf("Слот %d: [%d] (%s)\n", i, id, ITEM_NAMES[id]);
+    }
+}
