@@ -49,11 +49,52 @@ int main() {
     inventory[7] = ITEM_IRON;
     inventory[8] = ITEM_GOLD;
     inventory[9] = ITEM_COAL;
-    // Стартовое состояние
-    printTime(current_day, current_hour);
-    printInv(inventory);
+ 
+
+    // Главный цикл игры
+    int choice;
+    do {
+        printf("\n=== МЕНЮ ===\n");
+        printf("[0] Выход\n");
+        printf("[1] Посмотреть на часы\n");
+        printf("[2] Промотать время (Поработать)\n");
+        printf("[3] Посмотреть инвентарь\n");
+        printf("[4] Положить предмет в слот\n");
+        printf("[5] Выбросить предмет\n");
+
+        choice = safeInputInt("Ваш выбор: ");
+
+        switch (choice) {
+            case 0:
+                printf("Выход из игры...\n");
+                break;
+            case 1:
+                printTime(current_day, current_hour);
+                break;
+            case 2: {
+                int hours = safeInputInt("Сколько часов работать? ");
+                work(&current_day, &current_hour, hours);
+                break;
+            }
+            case 3:
+                printInv(inventory);
+                break;
+            case 4: {
+                int slot = safeInputInt("Введите номер слота (0-9): ");
+                int id = safeInputInt("Введите ID предмета (0-9): ");
+                putItem(inventory, slot, id);
+                break;
+            }
+            case 5: {
+                int slot = safeInputInt("Введите номер слота для очистки (0-9): ");
+                dropItem(inventory, slot);
+                break;
+            }
+            
+        }
+    } while (choice != 0);
+
     return 0;
-    
 }
 
 void printTime(int day, int hour) {
@@ -68,7 +109,7 @@ void printInv(const int inventory[]) {
 }
 
 // Защита от дурака
-int safeInputint(const char *prompt) {
+int safeInputInt(const char *prompt) {
     int value;
     char ch;
     while (1) {
