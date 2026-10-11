@@ -33,8 +33,10 @@ int safeInputInt(const char *prompt);
 void removeDuplicates(int inventory[]);
 
 int main() {
+    // Игровое время
     int current_day = START_DAY;
     int current_hour = START_HOUR;
+    // Инвентарь
     int inventory[INV_SIZE] = {0};
 
     inventory[0] = ITEM_EMPTY;
@@ -47,6 +49,7 @@ int main() {
     inventory[7] = ITEM_IRON;
     inventory[8] = ITEM_GOLD;
     inventory[9] = ITEM_COAL;
+    // Стартовое состояние
     printTime(current_day, current_hour);
     printInv(inventory);
     return 0;
@@ -62,4 +65,38 @@ void printInv(const int inventory[]) {
         int id = inventory[i];
         printf("Слот %d: [%d] (%s)\n", i, id, ITEM_NAMES[id]);
     }
+}
+
+// Защита от дурака
+int safeInputint(const char *prompt) {
+    int value;
+    char ch;
+    while (1) {
+        printf("%s", prompt);
+        if (scanf("%d", &value) == 1) {
+            while ((ch = getchar()) != '\n' && ch != EOF);
+            return value;
+        } else {
+            printf("Ошибка! Это не число!\n");
+            while ((ch = getchar()) != '\n' && ch != EOF);
+        }
+    }
+}
+
+void work(int *day, int *hour, int hoursWorked) {
+    if (hoursWorked < 0) {
+        printf("Ошибка! Часы не могут быть отрицательными!\n");
+        return;
+
+    }
+
+    *hour = *hour + hoursWorked;
+    
+    while (*hour >= HOURS_IN_DAY) {
+        *hour = *hour - HOURS_IN_DAY;
+        (*day)++;
+    }
+
+    printf("Вы работали целых %d часов! Уже день %d, %d часов\n",
+         hoursWorked, *day, *hour);
 }
