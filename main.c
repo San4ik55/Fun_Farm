@@ -100,3 +100,28 @@ void work(int *day, int *hour, int hoursWorked) {
     printf("Вы работали целых %d часов! Уже день %d, %d часов\n",
          hoursWorked, *day, *hour);
 }
+
+void putItem(int inventory[], int slot, int itemId) {
+    if (slot < 0 || slot >= INV_SIZE) {
+        printf("Ошибка! Слот должен быть от 0 до %d!\n", INV_SIZE - 1);
+        return;
+    }
+
+    if (itemId < 0 || itemId >9) {
+        printf("Ошибка! ID предмета должен быть от 0 до 9!\n");
+        return;
+    }
+
+    inventory[slot] = itemId;
+    printf("В слот %d положен предмет: %s\n", slot, ITEM_NAMES[itemId]);
+}
+
+void dropItem(int inventory[], int slot) {
+     if (slot < 0 || slot >= INV_SIZE) {
+        printf("Ошибка! Слот должен быть от 0 до %d!\n", INV_SIZE - 1);
+        return;
+    }
+
+    inventory[slot] = ITEM_EMPTY;
+    printf("Слот %d теперь пуст!\n", slot);
+}
