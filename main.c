@@ -30,7 +30,7 @@ void putItem(int inventory[], int slot, int itemId);
 void dropItem(int inventory[], int slot);
 void work(int *day, int *hour, int hoursWorked);
 int safeInputInt(const char *prompt);
-void removeDuplicates(int inventory[]);
+void deleteDuplicates(int inventory[]);
 
 int main() {
     // Игровое время
@@ -47,7 +47,7 @@ int main() {
     inventory[5] = ITEM_PICKAXE;
     inventory[6] = ITEM_COPPER;
     inventory[7] = ITEM_IRON;
-    inventory[8] = ITEM_GOLD;
+    inventory[8] = ITEM_STONE;
     inventory[9] = ITEM_COAL;
  
 
@@ -61,6 +61,7 @@ int main() {
         printf("[3] Посмотреть инвентарь\n");
         printf("[4] Положить предмет в слот\n");
         printf("[5] Выбросить предмет\n");
+        printf("[6] Удалить дубликаты\n");
 
         choice = safeInputInt("Ваш выбор: ");
 
@@ -90,7 +91,9 @@ int main() {
                 dropItem(inventory, slot);
                 break;
             }
-            
+            case 6:
+            deleteDuplicates(inventory);
+            break;
         }
     } while (choice != 0);
 
@@ -124,6 +127,7 @@ int safeInputInt(const char *prompt) {
     }
 }
 
+// Функции
 void work(int *day, int *hour, int hoursWorked) {
     if (hoursWorked < 0) {
         printf("Ошибка! Часы не могут быть отрицательными!\n");
@@ -165,4 +169,26 @@ void dropItem(int inventory[], int slot) {
 
     inventory[slot] = ITEM_EMPTY;
     printf("Слот %d теперь пуст!\n", slot);
+}
+
+void deleteDuplicates( int inventory[]) {
+    printf("\n---Удаление Дубликатов---\n");
+
+    printf("Инвентарь до обработки:\n");
+    printInv(inventory);
+
+    for (int i = 0; i < INV_SIZE; i++) {
+        if (inventory[i] ==  ITEM_EMPTY) {
+            continue;
+        }
+
+        for (int j = i + 1; j < INV_SIZE; j++) {
+            if(inventory[j] == inventory[i]) {
+                inventory[j] = ITEM_EMPTY;
+            }
+        }
+    }
+
+    printf("Инвентарь после обработки:\n");
+    printInv(inventory);
 }
