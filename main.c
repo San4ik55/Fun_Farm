@@ -5,6 +5,7 @@
 #define START_DAY 1
 #define START_HOUR 8
 #define HOURS_IN_DAY 24
+#define MAX_WORK_HOURS 16
 
 // ID предметов
 #define ITEM_EMPTY 0
@@ -31,6 +32,7 @@ void dropItem(int inventory[], int slot);
 void work(int *day, int *hour, int hoursWorked);
 int safeInputInt(const char *prompt);
 void deleteDuplicates(int inventory[]);
+int safeInputIntRange(const char *prompt, int min, int max);
 
 int main() {
     // Игровое время
@@ -57,13 +59,13 @@ int main() {
         printf("\n=== МЕНЮ ===\n");
         printf("[0] Выход\n");
         printf("[1] Посмотреть на часы\n");
-        printf("[2] Промотать время (Поработать)\n");
+        printf("[2] Поработать\n");
         printf("[3] Посмотреть инвентарь\n");
         printf("[4] Положить предмет в слот\n");
         printf("[5] Выбросить предмет\n");
         printf("[6] Удалить дубликаты\n");
 
-        choice = safeInputInt("Ваш выбор: ");
+        choice = safeInputIntRange("Ваш выбор: ", 0, 6);
 
         switch (choice) {
             case 0:
@@ -81,13 +83,13 @@ int main() {
                 printInv(inventory);
                 break;
             case 4: {
-                int slot = safeInputInt("Введите номер слота (0-9): ");
-                int id = safeInputInt("Введите ID предмета (0-9): ");
+                int slot = safeInputIntRange("Введите номер слота (0-9): ", 0, 9);
+                int id = safeInputIntRange("Введите ID предмета (0-9): ", 0, 9);
                 putItem(inventory, slot, id);
                 break;
             }
             case 5: {
-                int slot = safeInputInt("Введите номер слота для очистки (0-9): ");
+                int slot = safeInputIntRange("Введите номер слота для очистки (0-9): ", 0, 9);
                 dropItem(inventory, slot);
                 break;
             }
@@ -98,17 +100,6 @@ int main() {
     } while (choice != 0);
 
     return 0;
-}
-
-void printTime(int day, int hour) {
-    printf("Текущее время: День %d, %d Часов\n", day, hour);
-}
-void printInv(const int inventory[]) {
-    printf("---Инвентарь---\n");
-    for (int i = 0; i < INV_SIZE; i++) {
-        int id = inventory[i];
-        printf("Слот %d: [%d] (%s)\n", i, id, ITEM_NAMES[id]);
-    }
 }
 
 // Защита от дурака
@@ -126,13 +117,37 @@ int safeInputInt(const char *prompt) {
         }
     }
 }
+int safeInputIntRange(const char *prompt, int min, int max) {
+    int value;
+    while(1) {
+        value = safeInputInt(prompt);
+        if (value >= min && value <= max) {
+            return value;
+        }
+        printf("Ошибка! Выберите число от %d до %d!\n", min, max);
+    }
+}
 
 // Функции
+void printTime(int day, int hour) {
+    printf("Текущее время: День %d, %d Часов\n", day, hour);
+}
+void printInv(const int inventory[]) {
+    printf("---Инвентарь---\n");
+    for (int i = 0; i < INV_SIZE; i++) {
+        int id = inventory[i];
+        printf("Слот %d: [%d] (%s)\n", i, id, ITEM_NAMES[id]);
+    }
+}
 void work(int *day, int *hour, int hoursWorked) {
     if (hoursWorked < 0) {
-        printf("Ошибка! Часы не могут быть отрицательными!\n");
+        printf("Ошибка! Работать в минус нельзя! А так хотелось...\n");
         return;
 
+    }
+    if (hoursWorked > MAX_WORK_HOURS ) {
+        printf("Не надорвешься? Нельзя работать больше %d часов!\n", MAX_WORK_HOURS);
+        return;
     }
 
     *hour = *hour + hoursWorked;
