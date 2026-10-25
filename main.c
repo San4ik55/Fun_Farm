@@ -1,4 +1,5 @@
 #include <stdio.h>
+#include <string.h>
 
 // Константы
 #define INV_SIZE 10
@@ -6,6 +7,7 @@
 #define START_HOUR 8
 #define HOURS_IN_DAY 24
 #define MAX_WORK_HOURS 16
+#define MAX_NAME_LEN 33
 
 // ID предметов
 #define ITEM_EMPTY 0
@@ -33,6 +35,8 @@ void work(int *day, int *hour, int hoursWorked);
 int safeInputInt(const char *prompt);
 void deleteDuplicates(int inventory[]);
 int safeInputIntRange(const char *prompt, int min, int max);
+int safeInputString(const char *prompt, char *buffer, int max_len);
+
 
 int main() {
     // Игровое время
@@ -51,12 +55,27 @@ int main() {
     inventory[7] = ITEM_IRON;
     inventory[8] = ITEM_STONE;
     inventory[9] = ITEM_COAL;
- 
+
+ // Имя Фермера 
+ char farmer_name[MAX_NAME_LEN];
+ while (1) {
+     int result = safeInputString("Введи свое имя Фермер!", farmer_name, MAX_NAME_LEN);
+     if (result == 1) {
+     if (strlen(farmer_name) == 0) {
+        strcpy(farmer_name, "Лох");
+        printf("Значит будешь Лох!\n");
+     }
+     break;
+    } else {
+        printf("Ошибка! Имя не должно быть длинее %d символов!\n", MAX_NAME_LEN - 1);
+    }
+}   
 
     // Главный цикл игры
     int choice;
     do {
-        printf("\n=== МЕНЮ ===\n");
+        printf("\n=== Здраствуй, %s! ===\n", farmer_name);
+        printf("=== МЕНЮ ===\n");
         printf("[0] Выход\n");
         printf("[1] Посмотреть на часы\n");
         printf("[2] Поработать\n");
@@ -127,7 +146,22 @@ int safeInputIntRange(const char *prompt, int min, int max) {
         printf("Ошибка! Выберите число от %d до %d!\n", min, max);
     }
 }
+int safeInputString(const char *prompt, char *buffer, int max_len) {
+    printf("%s", prompt);
 
+    if (fgets(buffer, max_len, stdin) != NULL) {
+        size_t len = strlen(buffer);
+        if (len > 0 && buffer[len - 1] == '\n') {
+            buffer[len - 1] = '\0';
+            return 1;
+        } else {
+            int ch;
+            while((ch = getchar()) != '\n' && ch != EOF);
+            return 0;
+        }
+    }
+    return 0;
+}
 // Функции
 void printTime(int day, int hour) {
     printf("Текущее время: День %d, %d Часов\n", day, hour);
@@ -187,10 +221,7 @@ void dropItem(int inventory[], int slot) {
 }
 
 void deleteDuplicates( int inventory[]) {
-    printf("\n---Удаление Дубликатов---\n");
-
-    printf("Инвентарь до обработки:\n");
-    printInv(inventory);
+    printf("Дубликаты удалены!\n");
 
     for (int i = 0; i < INV_SIZE; i++) {
         if (inventory[i] ==  ITEM_EMPTY) {
@@ -204,6 +235,4 @@ void deleteDuplicates( int inventory[]) {
         }
     }
 
-    printf("Инвентарь после обработки:\n");
-    printInv(inventory);
-}
+}  
