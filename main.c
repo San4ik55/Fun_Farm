@@ -8,6 +8,8 @@
 #define HOURS_IN_DAY 24
 #define MAX_WORK_HOURS 16
 #define MAX_NAME_LEN 33
+#define MAX_ITEMS 10
+#define MAX_ITEM_NAME_LEN 32
 
 // ID предметов
 #define ITEM_EMPTY 0
@@ -21,22 +23,18 @@
 #define ITEM_GOLD 8
 #define ITEM_COAL 9
 
-// Имена предметов
-const char *ITEM_NAMES[] = {
-    "Пусто", "Дерево", "Камень", "Семена", "Топор", "Кирка", "Медь", "Железо", "Золото", "Уголь"
-};
 
 // Прототипы функций 
 void printTime(int day, int hour);
-void printInv(const int inventory[]);
-void putItem(int inventory[], int slot, int itemId);
+void printInv(const int inventory[], char item_names[MAX_ITEMS][MAX_ITEM_NAME_LEN]);
+void putItem(int inventory[], int slot, int itemId, char item_names[MAX_ITEMS][MAX_ITEM_NAME_LEN]);
 void dropItem(int inventory[], int slot);
 void work(int *day, int *hour, int hoursWorked);
 int safeInputInt(const char *prompt);
-void deleteDuplicates(int inventory[]);
+void deleteDuplicates(int inventory[], char item_names[MAX_ITEMS][MAX_ITEM_NAME_LEN]);
 int safeInputIntRange(const char *prompt, int min, int max);
 int safeInputString(const char *prompt, char *buffer, int max_len);
-
+void loadItemNames(char item_names[MAX_ITEMS][MAX_ITEM_NAME_LEN]);
 
 int main() {
     // Игровое время
@@ -44,6 +42,8 @@ int main() {
     int current_hour = START_HOUR;
     // Инвентарь
     int inventory[INV_SIZE] = {0};
+    char item_names[MAX_ITEMS][MAX_ITEM_NAME_LEN];
+    loadItemNames(item_names);
 
     inventory[0] = ITEM_EMPTY;
     inventory[1] = ITEM_WOOD;
@@ -74,7 +74,7 @@ int main() {
     // Главный цикл игры
     int choice;
     do {
-        printf("\n=== Здраствуй, %s! ===\n", farmer_name);
+        printf(" Здраствуй, %s! \n", farmer_name);
         printf("=== МЕНЮ ===\n");
         printf("[0] Выход\n");
         printf("[1] Посмотреть на часы\n");
@@ -99,12 +99,12 @@ int main() {
                 break;
             }
             case 3:
-                printInv(inventory);
+                printInv(inventory, item_names);
                 break;
             case 4: {
                 int slot = safeInputIntRange("Введите номер слота (0-9): ", 0, 9);
                 int id = safeInputIntRange("Введите ID предмета (0-9): ", 0, 9);
-                putItem(inventory, slot, id);
+                putItem(inventory, slot, id, item_names);
                 break;
             }
             case 5: {
@@ -113,7 +113,7 @@ int main() {
                 break;
             }
             case 6:
-            deleteDuplicates(inventory);
+            deleteDuplicates(inventory, item_names);
             break;
         }
     } while (choice != 0);
@@ -166,13 +166,15 @@ int safeInputString(const char *prompt, char *buffer, int max_len) {
 void printTime(int day, int hour) {
     printf("Текущее время: День %d, %d Часов\n", day, hour);
 }
-void printInv(const int inventory[]) {
+void printInv(const int inventory[], char item_names[MAX_ITEMS][MAX_ITEM_NAME_LEN]) {
     printf("---Инвентарь---\n");
     for (int i = 0; i < INV_SIZE; i++) {
         int id = inventory[i];
-        printf("Слот %d: [%d] (%s)\n", i, id, ITEM_NAMES[id]);
+        printf("Слот %d: [%d] (%s)\n", i, id, item_names[id]);
     }
 }
+
+
 void work(int *day, int *hour, int hoursWorked) {
     if (hoursWorked < 0) {
         printf("Ошибка! Работать в минус нельзя! А так хотелось...\n");
@@ -195,7 +197,8 @@ void work(int *day, int *hour, int hoursWorked) {
          hoursWorked, *day, *hour);
 }
 
-void putItem(int inventory[], int slot, int itemId) {
+
+void putItem(int inventory[], int slot, int itemId, char item_names[MAX_ITEMS][MAX_ITEM_NAME_LEN]) {
     if (slot < 0 || slot >= INV_SIZE) {
         printf("Ошибка! Слот должен быть от 0 до %d!\n", INV_SIZE - 1);
         return;
@@ -207,8 +210,9 @@ void putItem(int inventory[], int slot, int itemId) {
     }
 
     inventory[slot] = itemId;
-    printf("В слот %d положен предмет: %s\n", slot, ITEM_NAMES[itemId]);
+    printf("В слот %d положен предмет: %s\n", slot, item_names[itemId]);
 }
+
 
 void dropItem(int inventory[], int slot) {
      if (slot < 0 || slot >= INV_SIZE) {
@@ -220,7 +224,8 @@ void dropItem(int inventory[], int slot) {
     printf("Слот %d теперь пуст!\n", slot);
 }
 
-void deleteDuplicates( int inventory[]) {
+
+void deleteDuplicates( int inventory[], char item_names[MAX_ITEMS][MAX_ITEM_NAME_LEN]) {
     printf("Дубликаты удалены!\n");
 
     for (int i = 0; i < INV_SIZE; i++) {
@@ -236,3 +241,31 @@ void deleteDuplicates( int inventory[]) {
     }
 
 }  
+
+
+void loadItemNames(char item_names[MAX_ITEMS][MAX_ITEM_NAME_LEN]) {
+    FILE *file = fopen("items.txt", "r");
+    if (file == NULL) {
+        printf("Ошибка! Файл items.txt не найден! Будем использовать значения по умолчанию.\n");
+        strcpy(item_names[0], "Пусто");
+        strcpy(item_names[1], "Дерево");
+        strcpy(item_names[2], "Камень");
+        strcpy(item_names[3], "Семена");
+        strcpy(item_names[4], "Топор");
+        strcpy(item_names[5], "Кирка");
+        strcpy(item_names[6], "Медь");
+        strcpy(item_names[7], "Железо");
+        strcpy(item_names[8], "Золото");
+        strcpy(item_names[9], "Уголь");
+        return;
+    }
+    for (int i = 0; i < MAX_ITEMS; i++) {
+        if (fgets(item_names[i], MAX_ITEM_NAME_LEN, file) == NULL) {
+            strcpy(item_names[i], "Неизвестно");
+        } else {
+            item_names[i][strcspn(item_names[i], "\n")] = '\0';
+        }
+    }
+    fclose(file);
+    printf("Инвентарь загружен из items.txt\n");
+}
