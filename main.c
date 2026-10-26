@@ -35,6 +35,8 @@ void deleteDuplicates(int inventory[], char item_names[MAX_ITEMS][MAX_ITEM_NAME_
 int safeInputIntRange(const char *prompt, int min, int max);
 int safeInputString(const char *prompt, char *buffer, int max_len);
 void loadItemNames(char item_names[MAX_ITEMS][MAX_ITEM_NAME_LEN]);
+void searchItemByName(const int inventory[], char item_names[MAX_ITEMS][MAX_ITEM_NAME_LEN]);
+void writeDiary(const char *farmer_name, int day, int hour, const int inventory[], char item_names[MAX_ITEMS][MAX_ITEM_NAME_LEN]);
 
 int main() {
     // Игровое время
@@ -83,8 +85,10 @@ int main() {
         printf("[4] Положить предмет в слот\n");
         printf("[5] Выбросить предмет\n");
         printf("[6] Удалить дубликаты\n");
+        printf("[7] Поиск предмета по названию\n");
+        printf("[8] Записать состояние в дневник\n");
 
-        choice = safeInputIntRange("Ваш выбор: ", 0, 6);
+        choice = safeInputIntRange("Ваш выбор: ", 0, 8);
 
         switch (choice) {
             case 0:
@@ -114,6 +118,14 @@ int main() {
             }
             case 6:
             deleteDuplicates(inventory, item_names);
+            break;
+
+            case 7:
+            searchItemByName(inventory, item_names);
+            break;
+
+            case 8:
+            writeDiary(farmer_name, current_day, current_hour, inventory, item_names);
             break;
         }
     } while (choice != 0);
@@ -268,4 +280,74 @@ void loadItemNames(char item_names[MAX_ITEMS][MAX_ITEM_NAME_LEN]) {
     }
     fclose(file);
     printf("Инвентарь загружен из items.txt\n");
+}
+
+void searchItemByName(const int inventory[], char item_names[MAX_ITEMS][MAX_ITEM_NAME_LEN]) {
+    char search_name[MAX_ITEM_NAME_LEN];
+    
+    safeInputString("Введите название предмета для поиска: ", search_name, MAX_ITEM_NAME_LEN);
+    
+    if (strlen(search_name) == 0) {
+        printf("Вы ничего не ввели!\n");
+        return;
+    }
+
+    int target_id = -1;
+    for (int i = 0; i < MAX_ITEMS; i++) {
+        if (strcmp(item_names[i], search_name) == 0) {
+            target_id = i;
+            break;
+        }
+    }
+
+    if (target_id == -1) {
+        printf("Ошибка! предмета с названием '%s' нет в каталоге!\n", search_name);
+        return;
+    }
+
+    int found = 0;
+    printf("Предмет '%s' найден в слотах: ", search_name);
+    for (int i = 0; i < INV_SIZE; i++) {
+        if (inventory[i] == target_id) {
+            printf("%d ", i);
+            found = 1;
+        }
+    }
+    
+    if (!found) {
+        printf("нет (в рюкзаке пусто)");
+    }
+    printf("\n");
+}
+
+void writeDiary(const char *farmer_name, int day, int hour, const int inventory[], char item_names[MAX_ITEMS][MAX_ITEM_NAME_LEN]) {
+    FILE *file = fopen("diary.txt", "a");
+    if (file == NULL) {
+        printf("Ошибка: не удалось открыть diary.txt для записи!\n");
+        return;
+    }
+
+    printf("\n--- Запись в дневник ---\n");
+    printf("Фермер: %s\n", farmer_name);
+    printf("Время: День %d, %02d:00\n", day, hour);
+    printf("Рюкзак: ");
+    for (int i = 0; i < INV_SIZE; i++) {
+        if (inventory[i] != ITEM_EMPTY) {
+            printf("%s ", item_names[inventory[i]]);
+        }
+    }
+    printf("\n");
+
+    fprintf(file, "=== День %d, %02d:00 ===\n", day, hour);
+    fprintf(file, "Фермер: %s\n", farmer_name);
+    fprintf(file, "Рюкзак: ");
+    for (int i = 0; i < INV_SIZE; i++) {
+        if (inventory[i] != ITEM_EMPTY) {
+            fprintf(file, "%s ", item_names[inventory[i]]);
+        }
+    }
+    fprintf(file, "\n\n");
+
+    fclose(file);
+    printf("Запись успешно добавлена в дневник\n");
 }
