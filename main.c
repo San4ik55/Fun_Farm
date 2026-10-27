@@ -1,5 +1,6 @@
 #include <stdio.h>
 #include <string.h>
+#include <windows.h>
 
 // Константы
 #define INV_SIZE 10
@@ -37,8 +38,11 @@ int safeInputString(const char *prompt, char *buffer, int max_len);
 void loadItemNames(char item_names[MAX_ITEMS][MAX_ITEM_NAME_LEN]);
 void searchItemByName(const int inventory[], char item_names[MAX_ITEMS][MAX_ITEM_NAME_LEN]);
 void writeDiary(const char *farmer_name, int day, int hour, const int inventory[], char item_names[MAX_ITEMS][MAX_ITEM_NAME_LEN]);
+void evaluateInventory(const int inventory[], char item_names[MAX_ITEMS][MAX_ITEM_NAME_LEN]);
 
 int main() {
+    SetConsoleOutputCP(65001);
+    SetConsoleCP(65001);
     // Игровое время
     int current_day = START_DAY;
     int current_hour = START_HOUR;
@@ -61,7 +65,7 @@ int main() {
  // Имя Фермера 
  char farmer_name[MAX_NAME_LEN];
  while (1) {
-     int result = safeInputString("Введи свое имя Фермер!", farmer_name, MAX_NAME_LEN);
+     int result = safeInputString("Введи свое имя Фермер: ", farmer_name, MAX_NAME_LEN);
      if (result == 1) {
      if (strlen(farmer_name) == 0) {
         strcpy(farmer_name, "Лох");
@@ -87,8 +91,9 @@ int main() {
         printf("[6] Удалить дубликаты\n");
         printf("[7] Поиск предмета по названию\n");
         printf("[8] Записать состояние в дневник\n");
+        printf("[9] Оценка инвентаря у скупщика\n");
 
-        choice = safeInputIntRange("Ваш выбор: ", 0, 8);
+        choice = safeInputIntRange("Ваш выбор: ", 0, 9);
 
         switch (choice) {
             case 0:
@@ -126,6 +131,9 @@ int main() {
 
             case 8:
             writeDiary(farmer_name, current_day, current_hour, inventory, item_names);
+            break;
+            case 9:
+            evaluateInventory(inventory, item_names);
             break;
         }
     } while (choice != 0);
@@ -350,4 +358,70 @@ void writeDiary(const char *farmer_name, int day, int hour, const int inventory[
 
     fclose(file);
     printf("Запись успешно добавлена в дневник\n");
+}
+
+void evaluateInventory(const int inventory[], char item_names[MAX_ITEMS][MAX_ITEM_NAME_LEN]) {
+    printf("Оценка рюкзака у скупщика\n");
+
+    FILE *inputFile = fopen("input.txt", "r");
+    if (inputFile == NULL) {
+        printf("Ошибка! файл input.txt не найден!\n");
+        return;
+    }
+
+    int prices[MAX_ITEMS] = {0};
+    char item_name_buffer[MAX_ITEM_NAME_LEN];
+    int price_buffer;
+
+    while (fscanf(inputFile, "%s %d", item_name_buffer, &price_buffer) == 2) {
+        for (int i = 0; i < MAX_ITEMS; i++) {
+            if (strcmp(item_names[i], item_name_buffer) == 0) {
+                prices[i] = price_buffer;
+                break;
+            }
+        }
+    }
+    fclose(inputFile);
+
+    FILE *outputFile = fopen("output.txt", "w");
+    if (outputFile == NULL) {
+        printf("Ошибка: не удалось создать output.txt!\n");
+        return;
+    }
+
+    int total_cost = 0;
+    int max_cost = -1;
+    int max_id = -1;
+
+    printf("--- Ведомость ---\n");
+    fprintf(outputFile, "--- Ведомость ---\n");
+
+    for (int i = 0; i < INV_SIZE; i++) {
+        int id = inventory[i];
+        if (id != ITEM_EMPTY) {
+            int cost = prices[id];
+            total_cost += cost;
+
+            printf("Слот %d: %s - %d монет\n", i, item_names[id], cost);
+            fprintf(outputFile, "Слот %d: %s - %d монет\n", i, item_names[id], cost);
+
+            if (cost > max_cost) {
+                max_cost = cost;
+                max_id = id;
+            }
+        }
+    }
+
+    printf("----------------------\n");
+    printf("Общая стоимость: %d монет\n", total_cost);
+    fprintf(outputFile, "----------------------\n");
+    fprintf(outputFile, "Общая стоимость: %d монет\n", total_cost);
+
+    if (max_id != -1) {
+        printf("Самый дорогой предмет: %s (%d монет)\n", item_names[max_id], max_cost);
+        fprintf(outputFile, "Самый дорогой предмет: %s (%d монет)\n", item_names[max_id], max_cost);
+    }
+
+    fclose(outputFile);
+    printf("Результат сохранен в output.txt\n");
 }
