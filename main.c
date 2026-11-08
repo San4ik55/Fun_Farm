@@ -1,6 +1,16 @@
 #include <stdio.h>
 #include <string.h>
 #include <windows.h>
+#include <stdlib.h>
+#include <time.h>
+
+typedef struct {
+    char **map;
+    int width;
+    int height;
+    int player_x;
+    int player_y;
+} GameMap
 
 // Константы
 #define INV_SIZE 10
@@ -39,6 +49,9 @@ void loadItemNames(char item_names[MAX_ITEMS][MAX_ITEM_NAME_LEN]);
 void searchItemByName(const int inventory[], char item_names[MAX_ITEMS][MAX_ITEM_NAME_LEN]);
 void writeDiary(const char *farmer_name, int day, int hour, const int inventory[], char item_names[MAX_ITEMS][MAX_ITEM_NAME_LEN]);
 void evaluateInventory(const int inventory[], char item_names[MAX_ITEMS][MAX_ITEM_NAME_LEN]);
+void generateMap(GameMap *game, int width, int height);
+void fillMap(GameMap *game);
+void printMap(const GameMap *game);
 
 int main() {
     SetConsoleOutputCP(65001);
@@ -299,7 +312,6 @@ void searchItemByName(const int inventory[], char item_names[MAX_ITEMS][MAX_ITEM
         printf("Вы ничего не ввели!\n");
         return;
     }
-
     int target_id = -1;
     for (int i = 0; i < MAX_ITEMS; i++) {
         if (strcmp(item_names[i], search_name) == 0) {
@@ -307,12 +319,10 @@ void searchItemByName(const int inventory[], char item_names[MAX_ITEMS][MAX_ITEM
             break;
         }
     }
-
     if (target_id == -1) {
         printf("Ошибка! предмета с названием '%s' нет в каталоге!\n", search_name);
         return;
     }
-
     int found = 0;
     printf("Предмет '%s' найден в слотах: ", search_name);
     for (int i = 0; i < INV_SIZE; i++) {
@@ -321,7 +331,6 @@ void searchItemByName(const int inventory[], char item_names[MAX_ITEMS][MAX_ITEM
             found = 1;
         }
     }
-    
     if (!found) {
         printf("нет (в рюкзаке пусто)");
     }
@@ -424,4 +433,61 @@ void evaluateInventory(const int inventory[], char item_names[MAX_ITEMS][MAX_ITE
 
     fclose(outputFile);
     printf("Результат сохранен в output.txt\n");
+}
+
+void generateMap(GameMap *game, int width, int height) {
+    game->width = width;
+    game->height = height;
+    game->map = (char**)malloc(height * sizeof(char*));
+
+    for (int i = 0; i < height; i++) {
+        game->map[i] = (char*)malloc(width * sizeof(char));
+    }
+}
+
+void fillMap(GameMap *game) {
+    for (int y = 0; y < game->height; y++) {
+        for (int x = 0; x < game->width; x++) {
+            if (y == 0 || y == game->height - 1 || x == 0 || x == game->width - 1) {
+                game->map[y][x] = '#';
+            } else {
+                game->map[y][x] = '.';
+            }
+        }
+    }
+    game->player_y = game->height / 2;
+    game->player_x = game->width / 2;
+    game->map[game->player_y][game->player_x] = '@';
+
+    for (int y = 1; y < game->height - 1; y++) {
+        for (int x = 1; x < game->width - 1; x++) {
+            if (y == game->player_y && x == game->player_x) continue;
+
+            int chance = rand() % 100;
+            if (chance < 15) {
+                game->map[y][x] = 'T';
+            } else if (chance < 30) {
+                game->map[y][x] = 'R';
+            }
+        }
+    }
+    int cave_placed = 0;
+    while (!cave_placed) {
+        int cx = rand() % (game->width - 2) + 1;
+        int cy = rand() % (game->height - 2) + 1;
+
+        if (game->map[cy][cx] == '.') {
+            game->map[cy][cx] = 'O';
+            cave_placed = 1;
+        }
+    }
+}
+
+void printMap(const GameMap *game) {
+    for (int y = 0; y < game->height; y++) {
+        for (int x = 0; x < game->width; x++) {
+            printf("%c", game->map[y][x]);
+        }
+        printf("\n");
+    }
 }
