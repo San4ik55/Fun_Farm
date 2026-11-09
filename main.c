@@ -52,6 +52,7 @@ void evaluateInventory(const int inventory[], char item_names[MAX_ITEMS][MAX_ITE
 void generateMap(GameMap *game, int width, int height);
 void fillMap(GameMap *game);
 void printMap(const GameMap *game);
+void freeMap(GameMap *game);
 
 int main() {
     SetConsoleOutputCP(65001);
@@ -105,6 +106,8 @@ int main() {
         printf("[7] Поиск предмета по названию\n");
         printf("[8] Записать состояние в дневник\n");
         printf("[9] Оценка инвентаря у скупщика\n");
+        
+
 
         choice = safeInputIntRange("Ваш выбор: ", 0, 9);
 
@@ -490,4 +493,17 @@ void printMap(const GameMap *game) {
         }
         printf("\n");
     }
+}
+
+void freeMAP(GameMap *game) {
+    if (game->map == NULL) {
+        return;
+    }
+    for (int i = 0;
+    i < game->height; i++) {
+        free(game->map[i]);
+    }
+    free(game->map);
+    game->map = NULL;
+
 }
