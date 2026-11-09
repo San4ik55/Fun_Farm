@@ -10,7 +10,7 @@ typedef struct {
     int height;
     int player_x;
     int player_y;
-} GameMap
+} GameMap;
 
 // Константы
 #define INV_SIZE 10
@@ -53,6 +53,7 @@ void generateMap(GameMap *game, int width, int height);
 void fillMap(GameMap *game);
 void printMap(const GameMap *game);
 void freeMap(GameMap *game);
+
 
 int main() {
     SetConsoleOutputCP(65001);
@@ -106,10 +107,12 @@ int main() {
         printf("[7] Поиск предмета по названию\n");
         printf("[8] Записать состояние в дневник\n");
         printf("[9] Оценка инвентаря у скупщика\n");
+        printf("[10] Отправиться в лес\n");
+
         
 
 
-        choice = safeInputIntRange("Ваш выбор: ", 0, 9);
+        choice = safeInputIntRange("Ваш выбор: ", 0, 10);
 
         switch (choice) {
             case 0:
@@ -151,6 +154,22 @@ int main() {
             case 9:
             evaluateInventory(inventory, item_names);
             break;
+            case 10: {
+                srand(time(NULL));
+
+                int w = 5 + rand() % 26;
+                int h = 5 + rand() % 26;
+                printf("Размер карты: %d на %d\n", w, h);
+
+                GameMap game;
+                game.map = NULL;
+                 generateMap(&game, w, h);
+                 fillMap(&game);
+                 printMap(&game);
+                 getchar();
+                 freeMap;
+                 break;
+            }
         }
     } while (choice != 0);
 
@@ -462,18 +481,17 @@ void fillMap(GameMap *game) {
     game->player_x = game->width / 2;
     game->map[game->player_y][game->player_x] = '@';
 
-    for (int y = 1; y < game->height - 1; y++) {
-        for (int x = 1; x < game->width - 1; x++) {
-            if (y == game->player_y && x == game->player_x) continue;
+    int fire_placed= 0;
+    while (!fire_placed) {
+        int fx = rand() % (game->width - 2) + 1;
+        int fy = rand() % (game->height - 2) + 1;
 
-            int chance = rand() % 100;
-            if (chance < 15) {
-                game->map[y][x] = 'T';
-            } else if (chance < 30) {
-                game->map[y][x] = 'R';
-            }
+        if (game->map[fy][fx] == '.') {
+            game->map[fy][fx] = '^';
+            fire_placed = 1;
         }
     }
+
     int cave_placed = 0;
     while (!cave_placed) {
         int cx = rand() % (game->width - 2) + 1;
@@ -482,6 +500,19 @@ void fillMap(GameMap *game) {
         if (game->map[cy][cx] == '.') {
             game->map[cy][cx] = 'O';
             cave_placed = 1;
+        }
+    }
+    
+     for (int y = 1; y < game->height - 1; y++) {
+        for (int x = 1; x < game->width - 1; x++) {
+            if (game->map[y][x] != '.') continue;
+
+            int chance = rand() % 100;
+            if (chance < 15) {
+                game->map[y][x] = 'T';
+            } else if (chance < 30) {
+                game->map[y][x] = 'R';
+            }
         }
     }
 }
@@ -495,7 +526,7 @@ void printMap(const GameMap *game) {
     }
 }
 
-void freeMAP(GameMap *game) {
+void freeMap(GameMap *game) {
     if (game->map == NULL) {
         return;
     }
