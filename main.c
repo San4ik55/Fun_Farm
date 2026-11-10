@@ -12,6 +12,7 @@ typedef struct {
     int player_y;
     int fire_x;
     int fire_y;
+    int is_cave;
 } GameMap;
 
 // Константы
@@ -56,7 +57,7 @@ void fillMap(GameMap *game);
 void printMap(const GameMap *game);
 void freeMap(GameMap *game);
 void movePlayer(GameMap *game, char dir);
-// void generateCave(GameMap *game);
+void generateCave(GameMap *game);
 
 int main() {
     SetConsoleOutputCP(65001);
@@ -166,13 +167,18 @@ int main() {
 
                 GameMap game;
                 game.map = NULL;
+                game.is_cave = 0;
                  generateMap(&game, w, h);
                  fillMap(&game);
                  char dir;
                  int running = 1;
                  while (running) {
                     system("cls");
-                    printf("=== Вы вышли в лес! ===\n");
+                    if (game.is_cave == 1) {
+                        printf("Вы спустились в пещеру!\n");
+                    } else {
+                        printf("=== Вы вышли в лес! ===\n");
+                    }
 
                     if (first_move) {
                         printf("Размер карты: %d на %d\n", w, h);
@@ -498,7 +504,48 @@ void generateMap(GameMap *game, int width, int height) {
         game->map[i] = (char*)malloc(width * sizeof(char));
     }
 }
+void generateCave(GameMap *game) {
+    freeMap(game);
 
+    int w = 5 + rand() % 4;
+    int h = 5 + rand() % 4;
+    generateMap(game, w, h);
+    game->is_cave = 1;
+
+    for (int y = 0; y < h; y++) {
+        for (int x = 0; x < w; x++) {
+            if (y == 0 || y == h - 1 || x == 0 || x == w - 1) {
+                game->map[y][x] = '#';
+            } else {
+                game->map[y][x] = '.';
+            }
+        }
+    }
+    game->player_y = h / 2;
+    game->player_x = w / 2;
+    game->map[game->player_y][game->player_x] = '@';
+    
+    int cave_exit = 0;
+    while (!cave_exit) {
+        int cx = rand() % (w - 2) + 1;
+        int cy = rand() % (h - 2) + 1;
+
+        if (game->map[cy][cx] == '.') {
+            game->map[cy][cx] = 'O';
+            cave_exit = 1;
+        }
+    }
+    for (int y = 1; y < h - 1; y++) {
+        for (int x = 1; x < w - 1; x++) {
+            if (game->map[y][x] != '.') continue;
+
+            int chance = rand() % 100;
+            if (chance < 15) {
+                game->map[y][x] = 'R';
+            }
+        }
+    }
+}
 void fillMap(GameMap *game) {
     for (int y = 0; y < game->height; y++) {
         for (int x = 0; x < game->width; x++) {
@@ -590,6 +637,21 @@ void movePlayer(GameMap *game, char dir) {
     }
     char target = game->map[new_y][new_x];
     if (target == '#' || target == 'T' || target == 'R') {
+        return;
+    }
+    if (game->is_cave == 0 && target == 'O') {
+        printf("\nВы спустились в пещеру!\n");
+        generateCave(game);
+        return;
+    }
+    if (game->is_cave == 1 && target =='O') {
+        printf("\nВы выбрались из пещеры!\n");
+        freeMap(game);
+        int w = 5 + rand() % 25;
+        int h = 5 + rand() % 25;
+        generateMap(game, w, h);
+        game->is_cave = 0;
+        fillMap(game);
         return;
     }
 
