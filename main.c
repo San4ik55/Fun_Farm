@@ -13,6 +13,7 @@ typedef struct {
     int fire_x;
     int fire_y;
     int is_cave;
+    int distance;
 } GameMap;
 
 // Константы
@@ -168,6 +169,7 @@ int main() {
                 GameMap game;
                 game.map = NULL;
                 game.is_cave = 0;
+                game.distance = 0;
                  generateMap(&game, w, h);
                  fillMap(&game);
                  char dir;
@@ -178,6 +180,7 @@ int main() {
                         printf("Вы спустились в пещеру!\n");
                     } else {
                         printf("=== Вы вышли в лес! ===\n");
+                        printf("Уже пройдено: %d.\n", game.distance);
                     }
 
                     if (first_move) {
@@ -652,6 +655,7 @@ void movePlayer(GameMap *game, char dir) {
         generateMap(game, w, h);
         game->is_cave = 0;
         fillMap(game);
+        game->distance++;
         return;
     }
 
