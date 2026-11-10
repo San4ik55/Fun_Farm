@@ -10,6 +10,8 @@ typedef struct {
     int height;
     int player_x;
     int player_y;
+    int fire_x;
+    int fire_y;
 } GameMap;
 
 // Константы
@@ -53,7 +55,8 @@ void generateMap(GameMap *game, int width, int height);
 void fillMap(GameMap *game);
 void printMap(const GameMap *game);
 void freeMap(GameMap *game);
-
+void movePlayer(GameMap *game, char dir);
+// void generateCave(GameMap *game);
 
 int main() {
     SetConsoleOutputCP(65001);
@@ -159,15 +162,44 @@ int main() {
 
                 int w = 5 + rand() % 26;
                 int h = 5 + rand() % 26;
-                printf("Размер карты: %d на %d\n", w, h);
+                int first_move = 1;
 
                 GameMap game;
                 game.map = NULL;
                  generateMap(&game, w, h);
                  fillMap(&game);
-                 printMap(&game);
-                 getchar();
-                 freeMap;
+                 char dir;
+                 int running = 1;
+                 while (running) {
+                    system("cls");
+                    printf("=== Вы вышли в лес! ===\n");
+
+                    if (first_move) {
+                        printf("Размер карты: %d на %d\n", w, h);
+                    }
+
+                    printMap(&game);
+                    scanf(" %c", &dir);
+                    if (dir >= 'a' && dir <= 'z') {
+                        dir = dir - 32;
+                    }
+                    if (dir == 'Q') {
+                        if (game.player_x == game.fire_x && game.player_y == game.fire_y) {
+                            printf("\nВы отдохнули у костра и вернулись домой.\n");
+                            running = 0;
+                        } else {
+                            printf("\nНужно отдохнуть у костра!\n");
+                            printf(">>>Enter>>> чтобы продолжить");
+                            getchar();
+                            getchar();
+                        }
+                    } else {
+                        movePlayer(&game, dir);
+                    }
+                    first_move = 0;
+                 }
+
+                 freeMap(&game);
                  break;
             }
         }
@@ -488,6 +520,8 @@ void fillMap(GameMap *game) {
 
         if (game->map[fy][fx] == '.') {
             game->map[fy][fx] = '^';
+            game->fire_x = fx;
+            game->fire_y = fy;
             fire_placed = 1;
         }
     }
@@ -537,4 +571,34 @@ void freeMap(GameMap *game) {
     free(game->map);
     game->map = NULL;
 
+}
+
+void movePlayer(GameMap *game, char dir) {
+    int new_x = game->player_x;
+    int new_y = game->player_y;
+    
+    switch (dir) {
+        case 'W': new_y--; break;
+        case 'A': new_x--; break;
+        case 'S': new_y++; break;
+        case 'D': new_x++; break;
+        default: return;
+    }
+
+    if (new_x < 0 || new_x >= game->width || new_y < 0 || new_y >= game->height) {
+        return;
+    }
+    char target = game->map[new_y][new_x];
+    if (target == '#' || target == 'T' || target == 'R') {
+        return;
+    }
+
+    if (game->player_x == game->fire_x && game->player_y == game->fire_y) {
+        game->map[game->player_y][game->player_x] = '^';
+    } else {
+        game->map[game->player_y][game->player_x] = '.';
+    }
+    game->player_y = new_y;
+    game->player_x = new_x;
+    game->map[game->player_y][game->player_x] = '@'; 
 }
