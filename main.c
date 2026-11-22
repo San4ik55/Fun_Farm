@@ -3,668 +3,202 @@
 #include <windows.h>
 #include <stdlib.h>
 #include <time.h>
-
-typedef struct {
-    char **map;
-    int width;
-    int height;
-    int player_x;
-    int player_y;
-    int fire_x;
-    int fire_y;
-    int is_cave;
-    int distance;
-} GameMap;
-
-// Константы
-#define INV_SIZE 10
-#define START_DAY 1
-#define START_HOUR 8
-#define HOURS_IN_DAY 24
-#define MAX_WORK_HOURS 16
-#define MAX_NAME_LEN 33
-#define MAX_ITEMS 10
-#define MAX_ITEM_NAME_LEN 32
-
-// ID предметов
-#define ITEM_EMPTY 0
-#define ITEM_WOOD 1
-#define ITEM_STONE 2
-#define ITEM_SEED 3
-#define ITEM_AXE 4
-#define ITEM_PICKAXE 5
-#define ITEM_COPPER 6
-#define ITEM_IRON 7
-#define ITEM_GOLD 8
-#define ITEM_COAL 9
-
-
-// Прототипы функций 
-void printTime(int day, int hour);
-void printInv(const int inventory[], char item_names[MAX_ITEMS][MAX_ITEM_NAME_LEN]);
-void putItem(int inventory[], int slot, int itemId, char item_names[MAX_ITEMS][MAX_ITEM_NAME_LEN]);
-void dropItem(int inventory[], int slot);
-void work(int *day, int *hour, int hoursWorked);
-int safeInputInt(const char *prompt);
-void deleteDuplicates(int inventory[], char item_names[MAX_ITEMS][MAX_ITEM_NAME_LEN]);
-int safeInputIntRange(const char *prompt, int min, int max);
-int safeInputString(const char *prompt, char *buffer, int max_len);
-void loadItemNames(char item_names[MAX_ITEMS][MAX_ITEM_NAME_LEN]);
-void searchItemByName(const int inventory[], char item_names[MAX_ITEMS][MAX_ITEM_NAME_LEN]);
-void writeDiary(const char *farmer_name, int day, int hour, const int inventory[], char item_names[MAX_ITEMS][MAX_ITEM_NAME_LEN]);
-void evaluateInventory(const int inventory[], char item_names[MAX_ITEMS][MAX_ITEM_NAME_LEN]);
-void generateMap(GameMap *game, int width, int height);
-void fillMap(GameMap *game);
-void printMap(const GameMap *game);
-void freeMap(GameMap *game);
-void movePlayer(GameMap *game, char dir);
-void generateCave(GameMap *game);
+#include "player.h"
+#include "map.h"
+#include "utils.h"
 
 int main() {
     SetConsoleOutputCP(65001);
     SetConsoleCP(65001);
-    // Игровое время
+    
+    srand(time(NULL));
+
+    Player *player = NULL;
     int current_day = START_DAY;
     int current_hour = START_HOUR;
-    // Инвентарь
-    int inventory[INV_SIZE] = {0};
     char item_names[MAX_ITEMS][MAX_ITEM_NAME_LEN];
     loadItemNames(item_names);
-
-    inventory[0] = ITEM_EMPTY;
-    inventory[1] = ITEM_WOOD;
-    inventory[2] = ITEM_STONE;
-    inventory[3] = ITEM_SEED;
-    inventory[4] = ITEM_AXE;
-    inventory[5] = ITEM_PICKAXE;
-    inventory[6] = ITEM_COPPER;
-    inventory[7] = ITEM_IRON;
-    inventory[8] = ITEM_STONE;
-    inventory[9] = ITEM_COAL;
-
- // Имя Фермера 
- char farmer_name[MAX_NAME_LEN];
- while (1) {
-     int result = safeInputString("Введи свое имя Фермер: ", farmer_name, MAX_NAME_LEN);
-     if (result == 1) {
-     if (strlen(farmer_name) == 0) {
-        strcpy(farmer_name, "Лох");
-        printf("Значит будешь Лох!\n");
-     }
-     break;
-    } else {
-        printf("Ошибка! Имя не должно быть длинее %d символов!\n", MAX_NAME_LEN - 1);
-    }
-}   
-
-    // Главный цикл игры
+    
     int choice;
+
     do {
-        printf(" Здраствуй, %s! \n", farmer_name);
-        printf("=== МЕНЮ ===\n");
+        printf("\n=== МЕНЮ ===\n");
         printf("[0] Выход\n");
-        printf("[1] Посмотреть на часы\n");
-        printf("[2] Поработать\n");
-        printf("[3] Посмотреть инвентарь\n");
-        printf("[4] Положить предмет в слот\n");
-        printf("[5] Выбросить предмет\n");
-        printf("[6] Удалить дубликаты\n");
-        printf("[7] Поиск предмета по названию\n");
-        printf("[8] Записать состояние в дневник\n");
-        printf("[9] Оценка инвентаря у скупщика\n");
-        printf("[10] Отправиться в лес\n");
+        printf("[1] Создать  персонажа\n");
+        printf("[2] Карточка персонажа\n");
+        printf("[3] Посмотреть на часы\n");
+        printf("[4] Поработать\n");
+        printf("[5] Посмотреть инвентарь\n");
+        printf("[6] Положить предмет в слот\n");
+        printf("[7] Выбросить предмет\n");
+        printf("[8] Удалить дубликаты\n");
+        printf("[9] Записать состояние в дневник\n");
+        printf("[10] Оценка инвентаря у скупщика\n");
+        printf("[11] Отправиться в лес\n");
 
-        
-
-
-        choice = safeInputIntRange("Ваш выбор: ", 0, 10);
+        choice = safeInputIntRange("Ваш выбор: ", 0, 11);
 
         switch (choice) {
             case 0:
                 printf("Выход из игры...\n");
                 break;
+
             case 1:
+                if (player != NULL) {
+                    printf("Персонаж уже существует. Удалить его? (1 - Да, 0 - Нет): ");
+                    int confirm = safeInputIntRange("", 0, 1);
+                    if (confirm == 1) {
+                        freePlayer(player);
+                        player = NULL;
+                    } else {
+                        break;
+                    }
+                }
+                player = createPlayer();
+                if (player != NULL) {
+                    player->inventory[1] = ITEM_WOOD;
+                    player->inventory[2] = ITEM_STONE;
+                    player->inventory[3] = ITEM_AXE;
+                    printf("Персонаж успешно создан!\n");
+                }
+                break;
+
+            case 2:
+                if (player == NULL) {
+                    printf("Ошибка: сначала создайте персонажа (пункт 1)!\n");
+                } else {
+                    printPlayerStats(player);
+                    printTime(current_day, current_hour);
+                }
+                break;
+
+            case 3:
                 printTime(current_day, current_hour);
                 break;
-            case 2: {
+
+            case 4:
+                if (player == NULL) { printf("Сначала создайте персонажа!\n"); break; }
                 int hours = safeInputInt("Сколько часов работать? ");
                 work(&current_day, &current_hour, hours);
                 break;
-            }
-            case 3:
-                printInv(inventory, item_names);
+
+            case 5:
+                if (player == NULL) { printf("Сначала создайте персонажа!\n"); break; }
+                printInv(player, item_names);
                 break;
-            case 4: {
+
+            case 6: {
+                if (player == NULL) { printf("Сначала создайте персонажа!\n"); break; }
                 int slot = safeInputIntRange("Введите номер слота (0-9): ", 0, 9);
                 int id = safeInputIntRange("Введите ID предмета (0-9): ", 0, 9);
-                putItem(inventory, slot, id, item_names);
+                putItem(player, slot, id, item_names);
                 break;
             }
-            case 5: {
-                int slot = safeInputIntRange("Введите номер слота для очистки (0-9): ", 0, 9);
-                dropItem(inventory, slot);
-                break;
-            }
-            case 6:
-            deleteDuplicates(inventory, item_names);
-            break;
 
-            case 7:
-            searchItemByName(inventory, item_names);
-            break;
+            case 7: {
+                if (player == NULL) { printf("Сначала создайте персонажа!\n"); break; }
+                int slot = safeInputIntRange("Введите номер слота для очистки (0-9): ", 0, 9);
+                dropItem(player, slot);
+                break;
+            }
 
             case 8:
-            writeDiary(farmer_name, current_day, current_hour, inventory, item_names);
-            break;
-            case 9:
-            evaluateInventory(inventory, item_names);
-            break;
-            case 10: {
-                srand(time(NULL));
+                if (player == NULL) { printf("Сначала создайте персонажа!\n"); break; }
+                deleteDuplicates(player);
+                break;
 
-                int w = 5 + rand() % 26;
-                int h = 5 + rand() % 26;
-                int first_move = 1;
+            case 9:
+                if (player == NULL) { printf("Сначала создайте персонажа!\n"); break; }
+                writeDiary(player->name, current_day, current_hour, player, item_names);
+                break;
+
+            case 10:
+                if (player == NULL) { printf("Сначала создайте персонажа!\n"); break; }
+                evaluateInventory(player, item_names);
+                break;
+
+            case 11: {
+                if (player == NULL) { printf("Сначала создайте персонажа!\n"); break; }
+                
+                if (player->stamina <= 0) {
+                    printf("У вас нет сил идти в лес! Отдохните.\n");
+                    break;
+                }
 
                 GameMap game;
                 game.map = NULL;
                 game.is_cave = 0;
                 game.distance = 0;
-                 generateMap(&game, w, h);
-                 fillMap(&game);
-                 char dir;
-                 int running = 1;
-                 while (running) {
-                    system("cls");
-                    if (game.is_cave == 1) {
-                        printf("Вы спустились в пещеру!\n");
-                    } else {
-                        printf("=== Вы вышли в лес! ===\n");
-                        printf("Уже пройдено: %d.\n", game.distance);
-                    }
 
+                int w = 8 + rand() % 23;
+                int h = 8 + rand() % 23;
+                generateMap(&game, w, h);
+                fillMap(&game, player);
+
+                int running = 1;
+                int first_move = 1;
+
+                while (running) {
+                    system("cls");
+                    
+                    if (game.is_cave == 1) {
+                        printf("=== ВЫ В ПЕЩЕРЕ ===\n");
+                    } else {
+                        printf("=== ВЫ В ЛЕСУ (Пройдено: %d) ===\n", game.distance);
+                    }
+                    printf("HP: %d/%d | Выносливость: %d/%d\n", player->hp, player->max_hp, player->stamina, player->max_stamina);
+                    
                     if (first_move) {
-                        printf("Размер карты: %d на %d\n", w, h);
+                        printf("Размер карты: %dx%d\n", w, h);
                     }
 
                     printMap(&game);
-                    scanf(" %c", &dir);
-                    if (dir >= 'a' && dir <= 'z') {
-                        dir = dir - 32;
-                    }
-                    if (dir == 'Q') {
-                        if (game.player_x == game.fire_x && game.player_y == game.fire_y) {
+                    printf("\nУправление: W-вверх, A-влево, S-вниз, D-вправо, Q-выход у костра.\n");
+                    printf("Ваш ход: ");
+
+                    char input_char;
+                    scanf(" %c", &input_char);
+                    
+                    if (input_char >= 'a' && input_char <= 'z') input_char -= 32;
+
+                    Direction dir = DIR_NONE;
+                    if (input_char == 'W') dir = DIR_UP;
+                    else if (input_char == 'S') dir = DIR_DOWN;
+                    else if (input_char == 'A') dir = DIR_LEFT;
+                    else if (input_char == 'D') dir = DIR_RIGHT;
+                    else if (input_char == 'Q') dir = DIR_QUIT;
+
+                    if (dir == DIR_QUIT) {
+                        if (player->x == game.fire_x && player->y == game.fire_y) {
                             printf("\nВы отдохнули у костра и вернулись домой.\n");
                             running = 0;
                         } else {
-                            printf("\nНужно отдохнуть у костра!\n");
+                            printf("\nНужно отдохнуть у костра (^)!\n");
                             printf(">>>Enter>>> чтобы продолжить");
-                            getchar();
-                            getchar();
+                            getchar(); getchar();
                         }
-                    } else {
-                        movePlayer(&game, dir);
+                    } else if (dir != DIR_NONE) {
+                        movePlayer(&game, player, dir);
+                    
+                        if (player->stamina <= 0) {
+                            printf("\nВы выбились из сил и вернулись домой!\n");
+                            printf(">>>Enter>>> чтобы продолжить");
+                            getchar(); getchar();
+                            running = 0;
+                        }
                     }
                     first_move = 0;
-                 }
+                }
 
-                 freeMap(&game);
-                 break;
+                freeMap(&game);
+                break;
             }
         }
     } while (choice != 0);
 
+    if (player != NULL) {
+        freePlayer(player);
+    }
+
     return 0;
-}
-
-// Защита от дурака
-int safeInputInt(const char *prompt) {
-    int value;
-    char ch;
-    while (1) {
-        printf("%s", prompt);
-        if (scanf("%d", &value) == 1) {
-            while ((ch = getchar()) != '\n' && ch != EOF);
-            return value;
-        } else {
-            printf("Ошибка! Это не число!\n");
-            while ((ch = getchar()) != '\n' && ch != EOF);
-        }
-    }
-}
-int safeInputIntRange(const char *prompt, int min, int max) {
-    int value;
-    while(1) {
-        value = safeInputInt(prompt);
-        if (value >= min && value <= max) {
-            return value;
-        }
-        printf("Ошибка! Выберите число от %d до %d!\n", min, max);
-    }
-}
-int safeInputString(const char *prompt, char *buffer, int max_len) {
-    printf("%s", prompt);
-
-    if (fgets(buffer, max_len, stdin) != NULL) {
-        size_t len = strlen(buffer);
-        if (len > 0 && buffer[len - 1] == '\n') {
-            buffer[len - 1] = '\0';
-            return 1;
-        } else {
-            int ch;
-            while((ch = getchar()) != '\n' && ch != EOF);
-            return 0;
-        }
-    }
-    return 0;
-}
-// Функции
-void printTime(int day, int hour) {
-    printf("Текущее время: День %d, %d Часов\n", day, hour);
-}
-void printInv(const int inventory[], char item_names[MAX_ITEMS][MAX_ITEM_NAME_LEN]) {
-    printf("---Инвентарь---\n");
-    for (int i = 0; i < INV_SIZE; i++) {
-        int id = inventory[i];
-        printf("Слот %d: [%d] (%s)\n", i, id, item_names[id]);
-    }
-}
-
-
-void work(int *day, int *hour, int hoursWorked) {
-    if (hoursWorked < 0) {
-        printf("Ошибка! Работать в минус нельзя! А так хотелось...\n");
-        return;
-
-    }
-    if (hoursWorked > MAX_WORK_HOURS ) {
-        printf("Не надорвешься? Нельзя работать больше %d часов!\n", MAX_WORK_HOURS);
-        return;
-    }
-
-    *hour = *hour + hoursWorked;
-    
-    while (*hour >= HOURS_IN_DAY) {
-        *hour = *hour - HOURS_IN_DAY;
-        (*day)++;
-    }
-
-    printf("Вы работали целых %d часов! Уже день %d, %d часов\n",
-         hoursWorked, *day, *hour);
-}
-
-
-void putItem(int inventory[], int slot, int itemId, char item_names[MAX_ITEMS][MAX_ITEM_NAME_LEN]) {
-    if (slot < 0 || slot >= INV_SIZE) {
-        printf("Ошибка! Слот должен быть от 0 до %d!\n", INV_SIZE - 1);
-        return;
-    }
-
-    if (itemId < 0 || itemId >9) {
-        printf("Ошибка! ID предмета должен быть от 0 до 9!\n");
-        return;
-    }
-
-    inventory[slot] = itemId;
-    printf("В слот %d положен предмет: %s\n", slot, item_names[itemId]);
-}
-
-
-void dropItem(int inventory[], int slot) {
-     if (slot < 0 || slot >= INV_SIZE) {
-        printf("Ошибка! Слот должен быть от 0 до %d!\n", INV_SIZE - 1);
-        return;
-    }
-
-    inventory[slot] = ITEM_EMPTY;
-    printf("Слот %d теперь пуст!\n", slot);
-}
-
-
-void deleteDuplicates( int inventory[], char item_names[MAX_ITEMS][MAX_ITEM_NAME_LEN]) {
-    printf("Дубликаты удалены!\n");
-
-    for (int i = 0; i < INV_SIZE; i++) {
-        if (inventory[i] ==  ITEM_EMPTY) {
-            continue;
-        }
-
-        for (int j = i + 1; j < INV_SIZE; j++) {
-            if(inventory[j] == inventory[i]) {
-                inventory[j] = ITEM_EMPTY;
-            }
-        }
-    }
-
-}  
-
-
-void loadItemNames(char item_names[MAX_ITEMS][MAX_ITEM_NAME_LEN]) {
-    FILE *file = fopen("items.txt", "r");
-    if (file == NULL) {
-        printf("Ошибка! Файл items.txt не найден! Будем использовать значения по умолчанию.\n");
-        strcpy(item_names[0], "Пусто");
-        strcpy(item_names[1], "Дерево");
-        strcpy(item_names[2], "Камень");
-        strcpy(item_names[3], "Семена");
-        strcpy(item_names[4], "Топор");
-        strcpy(item_names[5], "Кирка");
-        strcpy(item_names[6], "Медь");
-        strcpy(item_names[7], "Железо");
-        strcpy(item_names[8], "Золото");
-        strcpy(item_names[9], "Уголь");
-        return;
-    }
-    for (int i = 0; i < MAX_ITEMS; i++) {
-        if (fgets(item_names[i], MAX_ITEM_NAME_LEN, file) == NULL) {
-            strcpy(item_names[i], "Неизвестно");
-        } else {
-            item_names[i][strcspn(item_names[i], "\n")] = '\0';
-        }
-    }
-    fclose(file);
-    printf("Инвентарь загружен из items.txt\n");
-}
-
-void searchItemByName(const int inventory[], char item_names[MAX_ITEMS][MAX_ITEM_NAME_LEN]) {
-    char search_name[MAX_ITEM_NAME_LEN];
-    
-    safeInputString("Введите название предмета для поиска: ", search_name, MAX_ITEM_NAME_LEN);
-    
-    if (strlen(search_name) == 0) {
-        printf("Вы ничего не ввели!\n");
-        return;
-    }
-    int target_id = -1;
-    for (int i = 0; i < MAX_ITEMS; i++) {
-        if (strcmp(item_names[i], search_name) == 0) {
-            target_id = i;
-            break;
-        }
-    }
-    if (target_id == -1) {
-        printf("Ошибка! предмета с названием '%s' нет в каталоге!\n", search_name);
-        return;
-    }
-    int found = 0;
-    printf("Предмет '%s' найден в слотах: ", search_name);
-    for (int i = 0; i < INV_SIZE; i++) {
-        if (inventory[i] == target_id) {
-            printf("%d ", i);
-            found = 1;
-        }
-    }
-    if (!found) {
-        printf("нет (в рюкзаке пусто)");
-    }
-    printf("\n");
-}
-
-void writeDiary(const char *farmer_name, int day, int hour, const int inventory[], char item_names[MAX_ITEMS][MAX_ITEM_NAME_LEN]) {
-    FILE *file = fopen("diary.txt", "a");
-    if (file == NULL) {
-        printf("Ошибка: не удалось открыть diary.txt для записи!\n");
-        return;
-    }
-
-    printf("\n--- Запись в дневник ---\n");
-    printf("Фермер: %s\n", farmer_name);
-    printf("Время: День %d, %02d:00\n", day, hour);
-    printf("Рюкзак: ");
-    for (int i = 0; i < INV_SIZE; i++) {
-        if (inventory[i] != ITEM_EMPTY) {
-            printf("%s ", item_names[inventory[i]]);
-        }
-    }
-    printf("\n");
-
-    fprintf(file, "=== День %d, %02d:00 ===\n", day, hour);
-    fprintf(file, "Фермер: %s\n", farmer_name);
-    fprintf(file, "Рюкзак: ");
-    for (int i = 0; i < INV_SIZE; i++) {
-        if (inventory[i] != ITEM_EMPTY) {
-            fprintf(file, "%s ", item_names[inventory[i]]);
-        }
-    }
-    fprintf(file, "\n\n");
-
-    fclose(file);
-    printf("Запись успешно добавлена в дневник\n");
-}
-
-void evaluateInventory(const int inventory[], char item_names[MAX_ITEMS][MAX_ITEM_NAME_LEN]) {
-    printf("Оценка рюкзака у скупщика\n");
-
-    FILE *inputFile = fopen("input.txt", "r");
-    if (inputFile == NULL) {
-        printf("Ошибка! файл input.txt не найден!\n");
-        return;
-    }
-
-    int prices[MAX_ITEMS] = {0};
-    char item_name_buffer[MAX_ITEM_NAME_LEN];
-    int price_buffer;
-
-    while (fscanf(inputFile, "%s %d", item_name_buffer, &price_buffer) == 2) {
-        for (int i = 0; i < MAX_ITEMS; i++) {
-            if (strcmp(item_names[i], item_name_buffer) == 0) {
-                prices[i] = price_buffer;
-                break;
-            }
-        }
-    }
-    fclose(inputFile);
-
-    FILE *outputFile = fopen("output.txt", "w");
-    if (outputFile == NULL) {
-        printf("Ошибка: не удалось создать output.txt!\n");
-        return;
-    }
-
-    int total_cost = 0;
-    int max_cost = -1;
-    int max_id = -1;
-
-    printf("--- Ведомость ---\n");
-    fprintf(outputFile, "--- Ведомость ---\n");
-
-    for (int i = 0; i < INV_SIZE; i++) {
-        int id = inventory[i];
-        if (id != ITEM_EMPTY) {
-            int cost = prices[id];
-            total_cost += cost;
-
-            printf("Слот %d: %s - %d монет\n", i, item_names[id], cost);
-            fprintf(outputFile, "Слот %d: %s - %d монет\n", i, item_names[id], cost);
-
-            if (cost > max_cost) {
-                max_cost = cost;
-                max_id = id;
-            }
-        }
-    }
-
-    printf("----------------------\n");
-    printf("Общая стоимость: %d монет\n", total_cost);
-    fprintf(outputFile, "----------------------\n");
-    fprintf(outputFile, "Общая стоимость: %d монет\n", total_cost);
-
-    if (max_id != -1) {
-        printf("Самый дорогой предмет: %s (%d монет)\n", item_names[max_id], max_cost);
-        fprintf(outputFile, "Самый дорогой предмет: %s (%d монет)\n", item_names[max_id], max_cost);
-    }
-
-    fclose(outputFile);
-    printf("Результат сохранен в output.txt\n");
-}
-
-void generateMap(GameMap *game, int width, int height) {
-    game->width = width;
-    game->height = height;
-    game->map = (char**)malloc(height * sizeof(char*));
-
-    for (int i = 0; i < height; i++) {
-        game->map[i] = (char*)malloc(width * sizeof(char));
-    }
-}
-void generateCave(GameMap *game) {
-    freeMap(game);
-
-    int w = 5 + rand() % 4;
-    int h = 5 + rand() % 4;
-    generateMap(game, w, h);
-    game->is_cave = 1;
-
-    for (int y = 0; y < h; y++) {
-        for (int x = 0; x < w; x++) {
-            if (y == 0 || y == h - 1 || x == 0 || x == w - 1) {
-                game->map[y][x] = '#';
-            } else {
-                game->map[y][x] = '.';
-            }
-        }
-    }
-    game->player_y = h / 2;
-    game->player_x = w / 2;
-    game->map[game->player_y][game->player_x] = '@';
-    
-    int cave_exit = 0;
-    while (!cave_exit) {
-        int cx = rand() % (w - 2) + 1;
-        int cy = rand() % (h - 2) + 1;
-
-        if (game->map[cy][cx] == '.') {
-            game->map[cy][cx] = 'O';
-            cave_exit = 1;
-        }
-    }
-    for (int y = 1; y < h - 1; y++) {
-        for (int x = 1; x < w - 1; x++) {
-            if (game->map[y][x] != '.') continue;
-
-            int chance = rand() % 100;
-            if (chance < 15) {
-                game->map[y][x] = 'R';
-            }
-        }
-    }
-}
-void fillMap(GameMap *game) {
-    for (int y = 0; y < game->height; y++) {
-        for (int x = 0; x < game->width; x++) {
-            if (y == 0 || y == game->height - 1 || x == 0 || x == game->width - 1) {
-                game->map[y][x] = '#';
-            } else {
-                game->map[y][x] = '.';
-            }
-        }
-    }
-    game->player_y = game->height / 2;
-    game->player_x = game->width / 2;
-    game->map[game->player_y][game->player_x] = '@';
-
-    int fire_placed= 0;
-    while (!fire_placed) {
-        int fx = rand() % (game->width - 2) + 1;
-        int fy = rand() % (game->height - 2) + 1;
-
-        if (game->map[fy][fx] == '.') {
-            game->map[fy][fx] = '^';
-            game->fire_x = fx;
-            game->fire_y = fy;
-            fire_placed = 1;
-        }
-    }
-
-    int cave_placed = 0;
-    while (!cave_placed) {
-        int cx = rand() % (game->width - 2) + 1;
-        int cy = rand() % (game->height - 2) + 1;
-
-        if (game->map[cy][cx] == '.') {
-            game->map[cy][cx] = 'O';
-            cave_placed = 1;
-        }
-    }
-    
-     for (int y = 1; y < game->height - 1; y++) {
-        for (int x = 1; x < game->width - 1; x++) {
-            if (game->map[y][x] != '.') continue;
-
-            int chance = rand() % 100;
-            if (chance < 15) {
-                game->map[y][x] = 'T';
-            } else if (chance < 30) {
-                game->map[y][x] = 'R';
-            }
-        }
-    }
-}
-
-void printMap(const GameMap *game) {
-    for (int y = 0; y < game->height; y++) {
-        for (int x = 0; x < game->width; x++) {
-            printf("%c", game->map[y][x]);
-        }
-        printf("\n");
-    }
-}
-
-void freeMap(GameMap *game) {
-    if (game->map == NULL) {
-        return;
-    }
-    for (int i = 0;
-    i < game->height; i++) {
-        free(game->map[i]);
-    }
-    free(game->map);
-    game->map = NULL;
-
-}
-
-void movePlayer(GameMap *game, char dir) {
-    int new_x = game->player_x;
-    int new_y = game->player_y;
-    
-    switch (dir) {
-        case 'W': new_y--; break;
-        case 'A': new_x--; break;
-        case 'S': new_y++; break;
-        case 'D': new_x++; break;
-        default: return;
-    }
-
-    if (new_x < 0 || new_x >= game->width || new_y < 0 || new_y >= game->height) {
-        return;
-    }
-    char target = game->map[new_y][new_x];
-    if (target == '#' || target == 'T' || target == 'R') {
-        return;
-    }
-    if (game->is_cave == 0 && target == 'O') {
-        printf("\nВы спустились в пещеру!\n");
-        generateCave(game);
-        return;
-    }
-    if (game->is_cave == 1 && target =='O') {
-        printf("\nВы выбрались из пещеры!\n");
-        freeMap(game);
-        int w = 5 + rand() % 25;
-        int h = 5 + rand() % 25;
-        generateMap(game, w, h);
-        game->is_cave = 0;
-        fillMap(game);
-        game->distance++;
-        return;
-    }
-
-    if (game->player_x == game->fire_x && game->player_y == game->fire_y) {
-        game->map[game->player_y][game->player_x] = '^';
-    } else {
-        game->map[game->player_y][game->player_x] = '.';
-    }
-    game->player_y = new_y;
-    game->player_x = new_x;
-    game->map[game->player_y][game->player_x] = '@'; 
 }
