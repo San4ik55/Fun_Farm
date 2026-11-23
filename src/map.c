@@ -113,7 +113,7 @@ void printMap(const GameMap *game) {
     }
 }
 
-void movePlayer(GameMap *game, Player *player, Direction dir) {
+void movePlayer(GameMap *game, Player *player, Direction dir, int *current_day, int *current_hour) {
     int new_x = player->x;
     int new_y = player->y;
 
@@ -130,7 +130,20 @@ void movePlayer(GameMap *game, Player *player, Direction dir) {
     char target = game->map[new_y][new_x];
     if (target == '#' || target == 'T' || target == 'R') return;
 
-    player->stamina -= 1; 
+    player->stamina -= 1;
+
+    game->steps_count++;
+    if (game->steps_count >= 5) {
+        player->hunger -= 1;
+        if (player->hunger < 0) player->hunger = 0;
+        game->steps_count = 0;
+    }
+
+    if (player->hunger < 20) {
+        player->hp -= 1;
+        if (player->hp < 0) player->hp = 0;
+        printf("\nВы голодны! Вы теряете здоровье.\n");
+    }
 
     if (game->is_cave == 0 && target == 'O') {
         printf("\nВы спустились в пещеру!\n");
@@ -147,6 +160,11 @@ void movePlayer(GameMap *game, Player *player, Direction dir) {
         game->is_cave = 0;
         fillMap(game, player);
         game->distance++;
+        (*current_hour)++;
+        if (*current_hour >= 24) {
+            *current_hour = 0;
+            (*current_day)++;
+        }
         player->stamina -= 5;
         if (player->stamina < 0) player->stamina = 0;
         player->gold += GOLD_BASE_MULT * game->distance;

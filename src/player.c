@@ -4,6 +4,18 @@
 #include "player.h"
 #include "utils.h"
 
+Food food_catalog[MAX_ITEMS];
+
+void initFoodCatalog() {
+    strcpy(food_catalog[10].name, "Ягоды");
+    food_catalog[10].hunger_restore = 15;
+    food_catalog[10].stamina_restore = 5;
+
+    strcpy(food_catalog[11].name, "Мясо");
+    food_catalog[11].hunger_restore = 70;
+    food_catalog[11].stamina_restore = 30;
+}
+
 Player* createPlayer() {
     Player *p = (Player*)malloc(sizeof(Player));
     if (p == NULL) {
@@ -15,6 +27,8 @@ Player* createPlayer() {
     p->max_hp = 100;
     p->stamina = 100;
     p->max_stamina = 100;
+    p->hunger = 100;
+    p->max_hunger = 100;
     p->gold = 0;
     p->x = 0;
     p->y = 0;
@@ -53,6 +67,7 @@ void printPlayerStats(const Player *player) {
     printf("Имя: %s\n", player->name);
     printf("HP: %d/%d\n", player->hp, player->max_hp);
     printf("Выносливость: %d/%d\n", player->stamina, player->max_stamina);
+    printf("Сытость: %d/%d\n", player->hunger, player->max_hunger);
     printf("Золото: %d\n", player->gold);
     printf("--------------------------\n");
 }
@@ -135,7 +150,22 @@ void work(int *day, int *hour, Player *player, int hoursWorked) {
 
     player->stamina -= hoursWorked * 2;
     if (player->stamina < 0) player->stamina = 0; 
+    player->hunger -= hoursWorked;
+    if (player->hunger < 0) player->hunger = 0;
 
     printf("Вы работали целых %d часов! Уже день %d, %d часов\n", hoursWorked, *day, *hour);
     printf("Выносливость: %d/%d\n", player->stamina, player->max_stamina);
+}
+
+void sleepTime(int *day, int *hour, Player *player) {
+    (*day)++;
+    *hour = START_HOUR;
+
+    player->hp = player->max_hp;
+    player->stamina = player->max_stamina;
+    
+    player->hunger = player->max_hunger; 
+
+    printf("\nВы хорошо выспались. Наступил день %d, %d:00 утра.\n", *day, *hour);
+    printf("Здоровье, выносливость и сытость полностью восстановлены!\n");
 }

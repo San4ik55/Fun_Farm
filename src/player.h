@@ -2,7 +2,7 @@
 #define PLAYER_H
 
 #define MAX_NAME_LEN 33
-#define MAX_ITEMS 10
+#define MAX_ITEMS 12
 #define MAX_ITEM_NAME_LEN 32
 #define INV_SIZE 10
 #define START_DAY 1
@@ -20,7 +20,9 @@
 #define ITEM_COPPER 6
 #define ITEM_IRON 7
 #define ITEM_GOLD 8
-#define ITEM_COAL 
+#define ITEM_COAL 9
+#define ITEM_BERRY 10
+#define ITEM_MEAT  11
 
 typedef enum {
     DIR_NONE = 0,
@@ -32,15 +34,24 @@ typedef enum {
 } Direction;
 
 typedef struct {
+    char name[32];
+    int hunger_restore;
+    int stamina_restore;
+} Food;
+
+typedef struct {
     char name[MAX_NAME_LEN];
     int hp;     
     int max_hp;   
     int stamina;
     int max_stamina;
+    int hunger;
+    int max_hunger; 
     int gold; 
     int x, y;
     int inventory[INV_SIZE];
 } Player;
+ 
 
 Player* createPlayer();
 void freePlayer(Player *player);
@@ -56,5 +67,8 @@ void putItem(Player *player, int slot, int itemId, char item_names[MAX_ITEMS][MA
 void dropItem(Player *player, int slot);
 void deleteDuplicates(Player *player);
 void work(int *day, int *hour, Player *player, int hoursWorked);
+void sleepTime(int *day, int *hour, Player *player);
+extern Food food_catalog[MAX_ITEMS];
+void initFoodCatalog();
 
 #endif 
