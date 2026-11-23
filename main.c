@@ -26,7 +26,7 @@ int main() {
         printf("[0] Выход\n");
         printf("[1] Создать  персонажа\n");
         printf("[2] Карточка персонажа\n");
-        printf("[3] Посмотреть на часы\n");
+        printf("[3] Управление временем\n");
         printf("[4] Поработать\n");
         printf("[5] Посмотреть инвентарь\n");
         printf("[6] Положить предмет в слот\n");
@@ -72,14 +72,46 @@ int main() {
                 }
                 break;
 
-            case 3:
-                printTime(current_day, current_hour);
+            case 3: {
+                if (player == NULL) { printf("Сначала создайте персонажа!\n"); break; }
+                
+                int time_choice;
+                do {
+                    printf("\n--- УПРАВЛЕНИЕ ВРЕМЕНЕМ ---\n");
+                    printf("[0] Назад\n");
+                    printf("[1] Посмотреть на часы\n");
+                    printf("[2] Подождать (Пропустить время)\n");
+                    printf("[3] Лечь спать (Отдых)\n");
+                    
+                    time_choice = safeInputIntRange("Выбор: ", 0, 3);
+                    
+                    switch (time_choice) {
+                        case 1:
+                            printTime(current_day, current_hour);
+                            break;
+                        case 2: {
+                            int hours = safeInputIntRange("Сколько часов ждать (1-8)? ", 1, 8);
+                            if (current_hour + hours >= 26) {
+                                printf("Нельзя ждать так долго! Наступит ночь, нужно спать.\n");
+                            } else {
+                                current_hour += hours;
+                                while (current_hour >= 24) { current_hour -= 24; current_day++; }
+                                printf("Вы подождали %d часов.\n", hours);
+                            }
+                            break;
+                        }
+                        case 3:
+                            sleepTime(&current_day, &current_hour, player); 
+                            break;
+                    }
+                } while (time_choice != 0);
                 break;
+            }
 
             case 4:
                 if (player == NULL) { printf("Сначала создайте персонажа!\n"); break; }
                 int hours = safeInputInt("Сколько часов работать? ");
-                work(&current_day, &current_hour, hours);
+                work(&current_day, &current_hour, player, hours);
                 break;
 
             case 5:
@@ -117,11 +149,15 @@ int main() {
                 evaluateInventory(player, item_names);
                 break;
 
-            case 11: {
+            case 11: { 
                 if (player == NULL) { printf("Сначала создайте персонажа!\n"); break; }
                 
                 if (player->stamina <= 0) {
                     printf("У вас нет сил идти в лес! Отдохните.\n");
+                    break;
+                }
+                if (current_hour >= 2 && current_hour < 8) {
+                    printf("Уже ночь (после 02:00)! Фермер должен спать.\n");
                     break;
                 }
 
@@ -129,7 +165,6 @@ int main() {
                 game.map = NULL;
                 game.is_cave = 0;
                 game.distance = 0;
-
                 int w = 8 + rand() % 23;
                 int h = 8 + rand() % 23;
                 generateMap(&game, w, h);
@@ -141,24 +176,19 @@ int main() {
                 while (running) {
                     system("cls");
                     
-                    if (game.is_cave == 1) {
-                        printf("=== ВЫ В ПЕЩЕРЕ ===\n");
-                    } else {
-                        printf("=== ВЫ В ЛЕСУ (Пройдено: %d) ===\n", game.distance);
-                    }
-                    printf("HP: %d/%d | Выносливость: %d/%d\n", player->hp, player->max_hp, player->stamina, player->max_stamina);
-                    
-                    if (first_move) {
-                        printf("Размер карты: %dx%d\n", w, h);
-                    }
+                   printf("HP: %d/%d | Выносливость: %d/%d | Золото: %d | Карт пройдено: %d | Время: %02d:00\n",
+       player->hp, player->max_hp, player->stamina, player->max_stamina, 
+       player->gold, game.distance, current_hour);
+
+                    if (game.is_cave == 1) printf("=== ВЫ В ПЕЩЕРЕ ===\n");
+                    else printf("=== ВЫ В ЛЕСУ ===\n");
+
+                    if (first_move) printf("Размер карты: %dx%d\n", w, h);
 
                     printMap(&game);
-                    printf("\nУправление: W-вверх, A-влево, S-вниз, D-вправо, Q-выход у костра.\n");
-                    printf("Ваш ход: ");
+                    printf("\nУправление: W/A/S/D, Q-выход у костра.\nВаш ход: ");
 
-                    char input_char;
-                    scanf(" %c", &input_char);
-                    
+                    char input_char = _getch();
                     if (input_char >= 'a' && input_char <= 'z') input_char -= 32;
 
                     Direction dir = DIR_NONE;
@@ -175,15 +205,18 @@ int main() {
                         } else {
                             printf("\nНужно отдохнуть у костра (^)!\n");
                             printf(">>>Enter>>> чтобы продолжить");
-                            getchar(); getchar();
+                            _getch(); _getch();
                         }
                     } else if (dir != DIR_NONE) {
                         movePlayer(&game, player, dir);
-                    
+                        
                         if (player->stamina <= 0) {
-                            printf("\nВы выбились из сил и вернулись домой!\n");
+                            printf("\nВы выбились из сил и упали без сознания!\n");
+                            printf("Спасатели доставили вас домой, забрав половину золота.\n");
+                            player->gold /= 2; 
+                            player->stamina = 0;
                             printf(">>>Enter>>> чтобы продолжить");
-                            getchar(); getchar();
+                            _getch(); _getch();
                             running = 0;
                         }
                     }
@@ -192,6 +225,7 @@ int main() {
 
                 freeMap(&game);
                 break;
+            
             }
         }
     } while (choice != 0);

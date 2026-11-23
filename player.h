@@ -9,6 +9,7 @@
 #define START_HOUR 8
 #define HOURS_IN_DAY 24
 #define MAX_WORK_HOURS 16
+#define GOLD_BASE_MULT 10
 
 #define ITEM_EMPTY 0
 #define ITEM_WOOD 1
@@ -54,6 +55,6 @@ void printInv(const Player *player, char item_names[MAX_ITEMS][MAX_ITEM_NAME_LEN
 void putItem(Player *player, int slot, int itemId, char item_names[MAX_ITEMS][MAX_ITEM_NAME_LEN]);
 void dropItem(Player *player, int slot);
 void deleteDuplicates(Player *player);
-void work(int *day, int *hour, int hoursWorked);
+void work(int *day, int *hour, Player *player, int hoursWorked);
 
 #endif 

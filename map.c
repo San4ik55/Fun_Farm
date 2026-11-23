@@ -147,6 +147,9 @@ void movePlayer(GameMap *game, Player *player, Direction dir) {
         game->is_cave = 0;
         fillMap(game, player);
         game->distance++;
+        player->stamina -= 5;
+        if (player->stamina < 0) player->stamina = 0;
+        player->gold += GOLD_BASE_MULT * game->distance;
         return;
     }
 

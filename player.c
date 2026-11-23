@@ -103,21 +103,39 @@ void deleteDuplicates(Player *player) {
     }
 }
 
-void work(int *day, int *hour, int hoursWorked) {
+void work(int *day, int *hour, Player *player, int hoursWorked) {
+
     if (hoursWorked < 0) {
-        printf("Ошибка! Работать в минус нельзя!\n");
+        printf("Ошибка! Работать в минус нельзя! А так хотелось...\n");
         return;
     }
+
     if (hoursWorked > MAX_WORK_HOURS) {
-        printf("Нельзя работать больше %d часов!\n", MAX_WORK_HOURS);
+        printf("Не надорвешься? Нельзя работать больше %d часов!\n", MAX_WORK_HOURS);
+        return;
+    }
+
+    if (*hour + hoursWorked >= 26) {
+        printf("Уже поздно! Фермер должен спать. Идите отдыхать.\n");
+        return;
+    }
+
+    if (player->stamina <= 0) {
+        printf("У вас нет сил работать! Отдохните.\n");
         return;
     }
 
     *hour = *hour + hoursWorked;
-    
+
     while (*hour >= HOURS_IN_DAY) {
         *hour = *hour - HOURS_IN_DAY;
         (*day)++;
     }
+
+
+    player->stamina -= hoursWorked * 2;
+    if (player->stamina < 0) player->stamina = 0; 
+
     printf("Вы работали целых %d часов! Уже день %d, %d часов\n", hoursWorked, *day, *hour);
+    printf("Выносливость: %d/%d\n", player->stamina, player->max_stamina);
 }
