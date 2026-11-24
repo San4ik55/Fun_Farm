@@ -6,16 +6,6 @@
 
 Food food_catalog[MAX_ITEMS];
 
-void initFoodCatalog() {
-    strcpy(food_catalog[10].name, "Ягоды");
-    food_catalog[10].hunger_restore = 15;
-    food_catalog[10].stamina_restore = 5;
-
-    strcpy(food_catalog[11].name, "Мясо");
-    food_catalog[11].hunger_restore = 70;
-    food_catalog[11].stamina_restore = 30;
-}
-
 Player* createPlayer() {
     Player *p = (Player*)malloc(sizeof(Player));
     if (p == NULL) {
@@ -168,4 +158,14 @@ void sleepTime(int *day, int *hour, Player *player) {
 
     printf("\nВы хорошо выспались. Наступил день %d, %d:00 утра.\n", *day, *hour);
     printf("Здоровье, выносливость и сытость полностью восстановлены!\n");
+}
+
+void initFoodCatalog() {
+    strcpy(food_catalog[10].name, "Ягоды");
+    food_catalog[10].hunger_restore = 15;
+    food_catalog[10].stamina_restore = 5;
+
+    strcpy(food_catalog[11].name, "Мясо");
+    food_catalog[11].hunger_restore = 70;
+    food_catalog[11].stamina_restore = 30;
 }

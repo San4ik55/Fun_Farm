@@ -3,7 +3,6 @@
 #include <windows.h>
 #include <stdlib.h>
 #include <time.h>
-#include <conio.h>
 #include "player.h"
 #include "map.h"
 #include "utils.h"
@@ -191,9 +190,10 @@ int main() {
                     if (first_move) printf("Размер карты: %dx%d\n", w, h);
 
                     printMap(&game);
-                    printf("\nУправление: W/A/S/D, Q-выход у костра.\nВаш ход: ");
+                    printf("\nУправление: W/A/S/D, Q-выход у костра, E-Сьесть припасы.\nВаш ход: ");
 
-                    char input_char = _getch();
+                    char input_char;
+                    scanf(" %c", &input_char);
                     if (input_char >= 'a' && input_char <= 'z') input_char -= 32;
 
                     Direction dir = DIR_NONE;
@@ -203,36 +203,58 @@ int main() {
                     else if (input_char == 'D') dir = DIR_RIGHT;
                     else if (input_char == 'Q') dir = DIR_QUIT;
                     else if (input_char == 'E') {
-                        int ate = 0;
+                        int food_slots[INV_SIZE];
+                        int food_count = 0;
+                        
                         for (int i = 0; i < INV_SIZE; i++) {
                             int item_id = player->inventory[i];
-                            
-                            if (item_id == 10 || item_id == 11) { 
-                                player->hunger += food_catalog[item_id].hunger_restore;
-                                if (player->hunger > player->max_hunger) player->hunger = player->max_hunger;
-                                
-                                player->stamina += food_catalog[item_id].stamina_restore;
-                                if (player->stamina > player->max_stamina) player->stamina = player->max_stamina;
-                                
-                                printf("\nВы съели %s! (Сытость +%d, Выносливость +%d)\n", 
-                                       food_catalog[item_id].name, 
-                                       food_catalog[item_id].hunger_restore, 
-                                       food_catalog[item_id].stamina_restore);
-                                       
-                                player->inventory[i] = ITEM_EMPTY; 
-                                ate = 1;
-                                break; 
+                            if (item_id == 10 || item_id == 11) {
+                                food_slots[food_count] = i;
+                                food_count++;
                             }
                         }
-                        
-                        if (!ate) {
-                            printf("\nУ вас нет еды в рюкзаке (Ягод, Мяса и т.д.)!\n");
-                            printf(">>>Enter>>> чтобы продолжить");
-                            _getch(); _getch();
-                        }
-                        continue; 
-                    }
 
+                        if (food_count == 0) {
+                            printf("\nУ вас нет еды в рюкзаке!\n");
+                            printf(">>>Enter>>> чтобы продолжить");
+                            getchar(); getchar();
+                            continue;
+                        }
+
+                        system("cls");
+                        printf("=== ВЫБЕРИТЕ, ЧТО СЪЕСТЬ ===\n");
+                        printf("[0] Отмена\n");
+                        for (int i = 0; i < food_count; i++) {
+                            int slot = food_slots[i];
+                            int item_id = player->inventory[slot];
+                            printf("[%d] %s (Слот %d) - Сытость +%d, Выносливость +%d\n", 
+                                   i + 1, 
+                                   food_catalog[item_id].name, 
+                                   slot,
+                                   food_catalog[item_id].hunger_restore,
+                                   food_catalog[item_id].stamina_restore);
+                        }
+                        
+                        int choice = safeInputIntRange("Ваш выбор: ", 0, food_count);
+
+                        if (choice > 0) {
+                            int chosen_slot = food_slots[choice - 1];
+                            int item_id = player->inventory[chosen_slot];
+
+                            player->hunger += food_catalog[item_id].hunger_restore;
+                            if (player->hunger > player->max_hunger) player->hunger = player->max_hunger;
+
+                            player->stamina += food_catalog[item_id].stamina_restore;
+                            if (player->stamina > player->max_stamina) player->stamina = player->max_stamina;
+
+                            printf("\nВы съели %s!\n", food_catalog[item_id].name);
+                            player->inventory[chosen_slot] = ITEM_EMPTY;
+                            
+                            printf(">>>Enter>>> чтобы продолжить");
+                            getchar();
+                        }
+                        continue;
+                    }
                     if (dir == DIR_QUIT) {
                         if (player->x == game.fire_x && player->y == game.fire_y) {
                             printf("\nВы отдохнули у костра и вернулись домой.\n");
@@ -240,16 +262,12 @@ int main() {
                         } else {
                             printf("\nНужно отдохнуть у костра (^)!\n");
                             printf(">>>Enter>>> чтобы продолжить");
-                            _getch(); _getch();
+                            getchar(); getchar();
                         }
-                    } else if (dir != DIR_NONE) {
-                         movePlayer(&game, player, dir, &current_day, &current_hour);
-                        static int last_distance = 0;
-                        if (game.distance > last_distance) {
-                            current_hour++;
-                            if (current_hour >= 24) { current_hour = 0; current_day++; }
-                            last_distance = game.distance;
-                        }
+                    
+                        } else if (dir != DIR_NONE) {
+                        movePlayer(&game, player, dir, &current_day, &current_hour);
+                        
                         
                         if (player->stamina <= 0) {
                             printf("\nВы выбились из сил и упали без сознания!\n");
@@ -257,7 +275,7 @@ int main() {
                             player->gold /= 2; 
                             player->stamina = 0;
                             printf(">>>Enter>>> чтобы продолжить");
-                            _getch(); _getch();
+                            getchar(); getchar();
                             running = 0;
                         }
                         else if (current_hour >= 2 && current_hour < 8) {
@@ -265,7 +283,7 @@ int main() {
                             printf("Спасатели доставили вас домой, забрав половину золота.\n");
                             player->gold /= 2;
                             printf(">>>Enter>>> чтобы продолжить");
-                            _getch(); _getch();
+                           getchar(); getchar();
                             running = 0;
                         }
                     }

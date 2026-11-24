@@ -57,10 +57,6 @@ Player* createPlayer();
 void freePlayer(Player *player);
 void printPlayerStats(const Player *player);
 
-Player* createPlayer();
-void freePlayer(Player *player);
-void printPlayerStats(const Player *player);
-
 void printTime(int day, int hour);
 void printInv(const Player *player, char item_names[MAX_ITEMS][MAX_ITEM_NAME_LEN]);
 void putItem(Player *player, int slot, int itemId, char item_names[MAX_ITEMS][MAX_ITEM_NAME_LEN]);
